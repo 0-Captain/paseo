@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import { SharedMarkdownRenderer } from "@/components/markdown/renderer";
+import { MarkdownRenderer } from "@/components/markdown/renderer";
 import { useIsCompactFormFactor } from "@/constants/layout";
 import { useSessionStore, type ExplorerFile } from "@/stores/session-store";
 import { useWebScrollViewScrollbar } from "@/components/use-web-scrollbar";
@@ -277,7 +277,7 @@ function FilePreviewBody({
             scrollEventThrottle={16}
             showsVerticalScrollIndicator={!showDesktopWebScrollbar}
           >
-            <SharedMarkdownRenderer text={preview.content ?? ""} />
+            <MarkdownRenderer text={preview.content ?? ""} />
           </RNScrollView>
           {scrollbar.overlay}
         </View>
