@@ -12,9 +12,12 @@ import Animated, { useAnimatedStyle, useSharedValue, runOnJS } from "react-nativ
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { X } from "lucide-react-native";
-import { GitHubIcon } from "@/components/icons/github-icon";
-import { PrPane } from "@/git/pr-pane";
-import { usePrPaneData } from "@/hooks/use-pr-pane-data";
+import {
+  formatPrTabLabel,
+  PullRequestPane,
+  PullRequestTabIcon,
+  usePrPaneData,
+} from "@/git/pull-request-panel";
 import {
   usePanelStore,
   selectIsFileExplorerOpen,
@@ -35,6 +38,7 @@ import { useKeyboardShiftStyle } from "@/hooks/use-keyboard-shift-style";
 import { useWindowControlsPadding } from "@/utils/desktop-window";
 import { TitlebarDragRegion } from "@/components/desktop/titlebar-drag-region";
 import { isWeb } from "@/constants/platform";
+import { buildWorkspaceAttachmentScopeKey } from "@/attachments/workspace-attachments-store";
 
 const MIN_CHAT_WIDTH = 400;
 function logExplorerSidebar(_event: string, _details: Record<string, unknown>): void {}
@@ -436,7 +440,11 @@ function SidebarContent({
     !isGit && (activeTab === "changes" || activeTab === "pr") ? "files" : activeTab;
   const resolvedTab: ExplorerTab =
     requestedTab === "pr" && !hasPullRequest ? "changes" : requestedTab;
-  const prTabLabel = prPane.prNumber === null ? "" : `#${prPane.prNumber}`;
+  const prTabLabel = formatPrTabLabel(prPane.prNumber);
+  const workspaceAttachmentScopeKey = useMemo(
+    () => buildWorkspaceAttachmentScopeKey({ serverId, workspaceId, cwd: workspaceRoot }),
+    [serverId, workspaceId, workspaceRoot],
+  );
 
   const headerStyle = useMemo(
     () => [styles.header, { paddingRight: padding.right }],
@@ -473,7 +481,7 @@ function SidebarContent({
               onTabPress={onTabPress}
               testID="explorer-tab-pr"
             >
-              <GitHubIcon
+              <PullRequestTabIcon
                 size={13}
                 color={
                   resolvedTab === "pr" ? theme.colors.foreground : theme.colors.foregroundMuted
@@ -510,7 +518,14 @@ function SidebarContent({
             onOpenFile={onOpenFile}
           />
         )}
-        {resolvedTab === "pr" && prPane.data && <PrPane data={prPane.data} />}
+        {resolvedTab === "pr" && prPane.data && (
+          <PullRequestPane
+            serverId={serverId}
+            cwd={workspaceRoot}
+            data={prPane.data}
+            workspaceAttachmentScopeKey={workspaceAttachmentScopeKey}
+          />
+        )}
       </View>
     </View>
   );

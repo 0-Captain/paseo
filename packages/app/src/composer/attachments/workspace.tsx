@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import { Text, View } from "react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";
-import { MessageSquareCode, MousePointer2 } from "lucide-react-native";
+import { FileText, MessageSquareCode, MousePointer2 } from "lucide-react-native";
 import type {
   ComposerAttachment,
+  PullRequestContextAttachmentSource,
   UserComposerAttachment,
   WorkspaceComposerAttachment,
 } from "@/attachments/types";
@@ -58,6 +59,14 @@ function getAttachmentKey(attachment: WorkspaceComposerAttachment): string {
       html: attachment.attachment.outerHTML,
     });
   }
+  if (attachment.kind === "context") {
+    return JSON.stringify({
+      type: "context",
+      provider: attachment.provider,
+      source: attachment.source,
+      id: attachment.id,
+    });
+  }
   return JSON.stringify({
     type: "review",
     cwd: attachment.attachment.cwd,
@@ -71,6 +80,81 @@ function getAttachmentKey(attachment: WorkspaceComposerAttachment): string {
       body: comment.body,
     })),
   });
+}
+
+function removeWorkspaceAttachmentsMatching(selectedKey: string): void {
+  const { attachmentsByScope, setWorkspaceAttachments } = useWorkspaceAttachmentsStore.getState();
+  for (const [scopeKey, attachments] of Object.entries(attachmentsByScope)) {
+    const nextAttachments = attachments.filter(
+      (attachment) => getAttachmentKey(attachment) !== selectedKey,
+    );
+    if (nextAttachments.length !== attachments.length) {
+      setWorkspaceAttachments({ scopeKey, attachments: nextAttachments });
+    }
+  }
+}
+
+function removeSentContextAttachments(attachments: readonly ComposerAttachment[]): void {
+  const sentContextKeys = attachments
+    .filter(
+      (attachment): attachment is WorkspaceComposerAttachment => attachment.kind === "context",
+    )
+    .map(getAttachmentKey);
+  for (const key of sentContextKeys) {
+    removeWorkspaceAttachmentsMatching(key);
+  }
+}
+
+function getContextSourceLabel(source: PullRequestContextAttachmentSource): string {
+  if (source === "pull_request_check") {
+    return "Check logs";
+  }
+  if (source === "pull_request_comment") {
+    return "Comment";
+  }
+  return "Review";
+}
+
+function getPillLabel(attachment: WorkspaceComposerAttachment): string {
+  if (attachment.kind === "browser_element") {
+    return `Element · ${attachment.attachment.tag}`;
+  }
+  if (attachment.kind === "context") {
+    return `${getContextSourceLabel(attachment.source)} · ${attachment.title}`;
+  }
+  return attachment.commentCount === 1
+    ? "Review · 1 comment"
+    : `Review · ${attachment.commentCount} comments`;
+}
+
+function getOpenAccessibilityLabel(attachment: WorkspaceComposerAttachment): string {
+  if (attachment.kind === "browser_element") {
+    return "Open browser element attachment";
+  }
+  if (attachment.kind === "context") {
+    return "Open context attachment";
+  }
+  return "Open review attachment";
+}
+
+function getRemoveAccessibilityLabel(attachment: WorkspaceComposerAttachment): string {
+  if (attachment.kind === "browser_element") {
+    return "Remove browser element attachment";
+  }
+  if (attachment.kind === "context") {
+    return "Remove context attachment";
+  }
+  return "Remove review attachment";
+}
+
+function renderPillIcon(attachment: WorkspaceComposerAttachment): ReactElement {
+  if (attachment.kind === "browser_element") {
+    return <ThemedMousePointer2 size={ICON_SIZE.sm} uniProps={iconForegroundMutedMapping} />;
+  }
+  if (attachment.kind === "context") {
+    return <ThemedFileText size={ICON_SIZE.sm} uniProps={iconForegroundMutedMapping} />;
+  }
+  return <ThemedMessageSquareCode size={ICON_SIZE.sm} uniProps={iconForegroundMutedMapping} />;
 }
 
 function renderPill(args: RenderWorkspaceAttachmentPillArgs): ReactElement {
@@ -89,9 +173,6 @@ function useWorkspaceAttachmentBinding({
   onOpenWorkspaceAttachment,
 }: WorkspaceAttachmentBindingInput): ComposerWorkspaceAttachmentBinding {
   const clearReviewDraft = useClearReviewDraft();
-  const setWorkspaceAttachments = useWorkspaceAttachmentsStore(
-    (state) => state.setWorkspaceAttachments,
-  );
   const [suppressedKeys, setSuppressedKeys] = useState<readonly string[]>([]);
   const workspaceAttachmentKeys = useMemo(
     () => workspaceAttachments.map(getAttachmentKey),
@@ -142,6 +223,7 @@ function useWorkspaceAttachmentBinding({
           clearReviewDraft({ key: attachment.reviewDraftKey });
         }
       }
+      removeSentContextAttachments(attachments);
     },
     [clearReviewDraft],
   );
@@ -150,17 +232,9 @@ function useWorkspaceAttachmentBinding({
     ({ selectedAttachments: current, index }: RemoveWorkspaceAttachmentInput) => {
       const selected = current[index];
       if (isWorkspaceAttachment(selected)) {
-        if (selected.kind === "browser_element") {
+        if (selected.kind === "browser_element" || selected.kind === "context") {
           const selectedKey = getAttachmentKey(selected);
-          const { attachmentsByScope } = useWorkspaceAttachmentsStore.getState();
-          for (const [scopeKey, attachments] of Object.entries(attachmentsByScope)) {
-            const nextAttachments = attachments.filter(
-              (attachment) => getAttachmentKey(attachment) !== selectedKey,
-            );
-            if (nextAttachments.length !== attachments.length) {
-              setWorkspaceAttachments({ scopeKey, attachments: nextAttachments });
-            }
-          }
+          removeWorkspaceAttachmentsMatching(selectedKey);
           return true;
         }
         suppressWorkspaceAttachment(selected);
@@ -168,7 +242,7 @@ function useWorkspaceAttachmentBinding({
       }
       return false;
     },
-    [setWorkspaceAttachments, suppressWorkspaceAttachment],
+    [suppressWorkspaceAttachment],
   );
 
   const openAttachment = useCallback(
@@ -231,15 +305,7 @@ function WorkspaceAttachmentPill({
   onOpen,
   onRemove,
 }: WorkspaceAttachmentPillProps) {
-  let label: string;
-  if (attachment.kind === "browser_element") {
-    label = `Element · ${attachment.attachment.tag}`;
-  } else {
-    label =
-      attachment.commentCount === 1
-        ? "Review · 1 comment"
-        : `Review · ${attachment.commentCount} comments`;
-  }
+  const label = getPillLabel(attachment);
   const handleOpen = useCallback(() => {
     onOpen(attachment);
   }, [onOpen, attachment]);
@@ -251,26 +317,12 @@ function WorkspaceAttachmentPill({
       testID="composer-review-attachment-pill"
       onOpen={handleOpen}
       onRemove={handleRemove}
-      openAccessibilityLabel={
-        attachment.kind === "browser_element"
-          ? "Open browser element attachment"
-          : "Open review attachment"
-      }
-      removeAccessibilityLabel={
-        attachment.kind === "browser_element"
-          ? "Remove browser element attachment"
-          : "Remove review attachment"
-      }
+      openAccessibilityLabel={getOpenAccessibilityLabel(attachment)}
+      removeAccessibilityLabel={getRemoveAccessibilityLabel(attachment)}
       disabled={disabled}
     >
       <View style={styles.pillBody}>
-        <View style={styles.pillIcon}>
-          {attachment.kind === "browser_element" ? (
-            <ThemedMousePointer2 size={ICON_SIZE.sm} uniProps={iconForegroundMutedMapping} />
-          ) : (
-            <ThemedMessageSquareCode size={ICON_SIZE.sm} uniProps={iconForegroundMutedMapping} />
-          )}
-        </View>
+        <View style={styles.pillIcon}>{renderPillIcon(attachment)}</View>
         <Text style={styles.pillText} numberOfLines={1}>
           {label}
         </Text>
@@ -313,4 +365,5 @@ const styles = StyleSheet.create((theme: Theme) => ({
 
 const ThemedMousePointer2 = withUnistyles(MousePointer2);
 const ThemedMessageSquareCode = withUnistyles(MessageSquareCode);
+const ThemedFileText = withUnistyles(FileText);
 const iconForegroundMutedMapping = (theme: Theme) => ({ color: theme.colors.foregroundMuted });

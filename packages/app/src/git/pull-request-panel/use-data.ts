@@ -6,9 +6,9 @@ import type {
   PullRequestTimelineResponse,
 } from "@getpaseo/protocol/messages";
 import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import { mapPrPaneData, type PrPaneData } from "@/git/pr-pane-data";
 import { useCheckoutPrStatusQuery } from "@/git/use-pr-status-query";
-import { prPaneTimelineQueryKey } from "@/git/query-keys";
+import { mapPrPaneData, type PrPaneData } from "./data";
+import { prPaneTimelineQueryKey } from "./query-keys";
 
 type CheckoutPrStatus = CheckoutPrStatusResponse["payload"]["status"];
 type CheckoutPrStatusPayloadError = CheckoutPrStatusResponse["payload"]["error"];
