@@ -183,8 +183,18 @@ Per `docs/testing.md` (real dependencies; external HTTP via local stub):
 - Run only the new test files (`npx vitest run <file> --bail=1`); full
   suites go to CI.
 
+## Client coverage
+
+Desktop (Electron), web (browser), and mobile (iOS/Android) share the same
+Expo composer component, so one `ClaudeQuotaMeter` covers all three GUI
+clients. Interaction differs only via the existing `Tooltip` primitive:
+hover on web/desktop, press on mobile. Mockups for all three were reviewed
+and approved (concentric dual ring, Claude brand orange).
+
 ## Out of scope
 
+- CLI quota display (`paseo daemon status` integration) — explicitly
+  declined during design review.
 - OAuth token refresh (Claude Code owns the credential lifecycle).
 - Host-level quota panel (the service/protocol design supports adding one
   later).
