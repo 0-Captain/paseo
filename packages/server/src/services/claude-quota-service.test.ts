@@ -159,7 +159,8 @@ describe("ClaudeQuotaService", () => {
     await service.requestQuota();
     service.notifyClaudeTurnCompleted();
     service.notifyClaudeTurnCompleted();
-    await vi.waitFor(() => expect(stub.requests()).toBe(1));
+    await new Promise((resolveSettle) => setImmediate(resolveSettle));
+    expect(stub.requests()).toBe(1);
   });
 
   test("onUpdate fires only when data changes", async () => {

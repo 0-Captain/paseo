@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { homedir, platform } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import equal from "fast-deep-equal";
 import type { ClaudeQuota, ClaudeQuotaStatePayload } from "@getpaseo/protocol/messages";
 
 const execFileAsync = promisify(execFile);
@@ -17,16 +18,18 @@ export interface ClaudeQuotaSnapshot {
   fetchedAt: number;
 }
 
+interface ClaudeQuotaLogger {
+  warn: (obj: unknown, msg: string) => void;
+  debug: (obj: unknown, msg: string) => void;
+}
+
 interface ClaudeQuotaServiceOptions {
   baseUrl?: string;
   credentialsPath?: string;
   readKeychainToken?: () => Promise<string | null>;
   minFetchIntervalMs?: number;
   pollIntervalMs?: number;
-  logger?: {
-    warn: (obj: unknown, msg: string) => void;
-    debug: (obj: unknown, msg: string) => void;
-  };
+  logger?: ClaudeQuotaLogger;
 }
 
 async function readKeychainTokenDefault(): Promise<string | null> {
@@ -97,7 +100,7 @@ export class ClaudeQuotaService {
   private readonly readKeychainToken: () => Promise<string | null>;
   private readonly minFetchIntervalMs: number;
   private readonly pollIntervalMs: number;
-  private readonly logger: ClaudeQuotaServiceOptions["logger"];
+  private readonly logger: ClaudeQuotaLogger | undefined;
 
   private snapshot: ClaudeQuotaSnapshot | null = null;
   private lastFetchAt = 0;
@@ -144,6 +147,7 @@ export class ClaudeQuotaService {
     if (Date.now() - this.lastFetchAt < this.minFetchIntervalMs) {
       return;
     }
+    this.lastFetchAt = Date.now();
     await this.fetchNow();
   }
 
@@ -206,8 +210,13 @@ export class ClaudeQuotaService {
         },
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         this.logger?.debug({ status: response.status }, "claude-quota: token rejected");
+        this.setSnapshot(null);
+        return null;
+      }
+      if (response.status === 403) {
+        this.logger?.warn({ status: response.status }, "claude-quota: token lacks permission");
         this.setSnapshot(null);
         return null;
       }
@@ -229,9 +238,7 @@ export class ClaudeQuotaService {
   }
 
   private setSnapshot(next: ClaudeQuotaSnapshot | null): void {
-    const changed =
-      JSON.stringify(this.snapshot?.quota ?? null) !== JSON.stringify(next?.quota ?? null) ||
-      Boolean(this.snapshot) !== Boolean(next);
+    const changed = !equal(this.snapshot?.quota ?? null, next?.quota ?? null);
     this.snapshot = next;
     if (!changed) {
       return;
