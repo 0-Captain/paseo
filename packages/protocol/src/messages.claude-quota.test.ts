@@ -35,7 +35,11 @@ describe("claude quota protocol", () => {
       type: "usage.claude.get_quota.response",
       payload: { requestId: "req_1", available: false },
     };
-    expect(() => SessionOutboundMessageSchema.parse(msg)).not.toThrow();
+    const parsed = SessionOutboundMessageSchema.parse(msg);
+    expect(parsed).toMatchObject({
+      type: "usage.claude.get_quota.response",
+      payload: { requestId: "req_1", available: false },
+    });
   });
 
   test("quota_updated broadcast round-trips through the outbound union", () => {
@@ -47,15 +51,18 @@ describe("claude quota protocol", () => {
         fetchedAt: 1765500000000,
       },
     };
-    expect(() => SessionOutboundMessageSchema.parse(msg)).not.toThrow();
+    const parsed = SessionOutboundMessageSchema.parse(msg);
+    expect(parsed).toMatchObject(msg);
   });
 
   test("quota with all buckets missing still parses (forward compat)", () => {
-    expect(() => ClaudeQuotaSchema.parse({})).not.toThrow();
+    const parsed = ClaudeQuotaSchema.parse({});
+    expect(parsed).toEqual({});
   });
 
   test("bucket without resetsAt parses", () => {
-    expect(() => ClaudeQuotaSchema.parse({ fiveHour: { utilization: 5 } })).not.toThrow();
+    const parsed = ClaudeQuotaSchema.parse({ fiveHour: { utilization: 5 } });
+    expect(parsed.fiveHour).toEqual({ utilization: 5 });
   });
 
   test("server_info without claudeQuota feature still parses (old daemon)", () => {

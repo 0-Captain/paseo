@@ -3305,6 +3305,7 @@ export const UsageClaudeQuotaUpdatedMessageSchema = z.object({
 });
 
 export type ClaudeQuota = z.infer<typeof ClaudeQuotaSchema>;
+export type ClaudeQuotaBucket = z.infer<typeof ClaudeQuotaBucketSchema>;
 export type ClaudeQuotaStatePayload = z.infer<
   typeof UsageClaudeQuotaUpdatedMessageSchema
 >["payload"];
@@ -4205,6 +4206,9 @@ export type CheckoutGithubCheckDetails = z.infer<typeof CheckoutGithubCheckDetai
 export type CheckoutGithubGetCheckDetailsResponse = z.infer<
   typeof CheckoutGithubGetCheckDetailsResponseSchema
 >;
+export type UsageClaudeGetQuotaRequest = z.infer<typeof UsageClaudeGetQuotaRequestSchema>;
+export type UsageClaudeGetQuotaResponse = z.infer<typeof UsageClaudeGetQuotaResponseSchema>;
+export type UsageClaudeQuotaUpdated = z.infer<typeof UsageClaudeQuotaUpdatedMessageSchema>;
 export type PullRequestMergeable = z.infer<typeof CheckoutPrStatusSchema>["mergeable"];
 export type CheckoutPrStatusRequest = z.infer<typeof CheckoutPrStatusRequestSchema>;
 export type CheckoutPrStatusResponse = z.infer<typeof CheckoutPrStatusResponseSchema>;
