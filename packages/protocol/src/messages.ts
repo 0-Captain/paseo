@@ -1467,6 +1467,25 @@ export const CheckoutGithubGetCheckDetailsRequestSchema = z.object({
   requestId: z.string(),
 });
 
+export const ClaudeQuotaBucketSchema = z.object({
+  utilization: z.number(),
+  resetsAt: z.string().optional(),
+});
+
+// All buckets optional: the upstream Anthropic endpoint is undocumented and
+// fields appear/disappear per account type.
+export const ClaudeQuotaSchema = z.object({
+  fiveHour: ClaudeQuotaBucketSchema.optional(),
+  sevenDay: ClaudeQuotaBucketSchema.optional(),
+  sevenDaySonnet: ClaudeQuotaBucketSchema.optional(),
+  sevenDayOpus: ClaudeQuotaBucketSchema.optional(),
+});
+
+export const UsageClaudeGetQuotaRequestSchema = z.object({
+  type: z.literal("usage.claude.get_quota.request"),
+  requestId: z.string(),
+});
+
 export const CheckoutPrStatusRequestSchema = z.object({
   type: z.literal("checkout_pr_status_request"),
   cwd: z.string(),
@@ -1937,6 +1956,7 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   CheckoutPrMergeRequestSchema,
   CheckoutGithubSetAutoMergeRequestSchema,
   CheckoutGithubGetCheckDetailsRequestSchema,
+  UsageClaudeGetQuotaRequestSchema,
   CheckoutPrStatusRequestSchema,
   PullRequestTimelineRequestSchema,
   CheckoutSwitchBranchRequestSchema,
@@ -2174,6 +2194,8 @@ export const ServerInfoStatusPayloadSchema = z
         rewind: z.boolean().optional(),
         // COMPAT(checkoutRefresh): added in v0.1.86, remove gate after 2026-11-29.
         checkoutRefresh: z.boolean().optional(),
+        // COMPAT(claudeQuota): added in v0.1.92, remove gate after 2026-12-13.
+        claudeQuota: z.boolean().optional(),
       })
       .optional(),
   })
@@ -3261,6 +3283,32 @@ export const CheckoutGithubGetCheckDetailsResponseSchema = z.object({
   }),
 });
 
+export const UsageClaudeGetQuotaResponseSchema = z.object({
+  type: z.literal("usage.claude.get_quota.response"),
+  payload: z.object({
+    requestId: z.string(),
+    available: z.boolean(),
+    quota: ClaudeQuotaSchema.optional(),
+    fetchedAt: z.number().optional(),
+  }),
+});
+
+// One-way daemon→client broadcast; intentionally has no `.request` counterpart
+// (pushed whenever the daemon-side quota snapshot changes).
+export const UsageClaudeQuotaUpdatedMessageSchema = z.object({
+  type: z.literal("usage.claude.quota_updated"),
+  payload: z.object({
+    available: z.boolean(),
+    quota: ClaudeQuotaSchema.optional(),
+    fetchedAt: z.number().optional(),
+  }),
+});
+
+export type ClaudeQuota = z.infer<typeof ClaudeQuotaSchema>;
+export type ClaudeQuotaStatePayload = z.infer<
+  typeof UsageClaudeQuotaUpdatedMessageSchema
+>["payload"];
+
 export const CheckoutPrStatusResponseSchema = z.object({
   type: z.literal("checkout_pr_status_response"),
   payload: CheckoutPrStatusPayloadSchema,
@@ -3876,6 +3924,8 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   CheckoutPrMergeResponseSchema,
   CheckoutGithubSetAutoMergeResponseSchema,
   CheckoutGithubGetCheckDetailsResponseSchema,
+  UsageClaudeGetQuotaResponseSchema,
+  UsageClaudeQuotaUpdatedMessageSchema,
   CheckoutPrStatusResponseSchema,
   PullRequestTimelineResponseSchema,
   CheckoutSwitchBranchResponseSchema,
