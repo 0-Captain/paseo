@@ -6,7 +6,7 @@ import {
   CLAUDE_ORANGE,
   CLAUDE_ORANGE_INNER_DARK,
   CLAUDE_ORANGE_INNER_LIGHT,
-} from "./claude-quota-meter";
+} from "./claude-quota-meter-core";
 
 const DESTRUCTIVE = "#c64f43";
 

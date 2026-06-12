@@ -3,7 +3,16 @@ import Svg, { Circle } from "react-native-svg";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import type { ClaudeQuota } from "@getpaseo/protocol/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatResetLabel, formatUpdatedAgo, resolveRingColor } from "./claude-quota-meter.ts";
+import { formatResetLabel, formatUpdatedAgo, resolveRingColor } from "./claude-quota-meter-core";
+
+export {
+  CLAUDE_ORANGE,
+  CLAUDE_ORANGE_INNER_DARK,
+  CLAUDE_ORANGE_INNER_LIGHT,
+  resolveRingColor,
+  formatResetLabel,
+  formatUpdatedAgo,
+} from "./claude-quota-meter-core";
 
 const SVG_SIZE = 18;
 const CENTER = SVG_SIZE / 2;
