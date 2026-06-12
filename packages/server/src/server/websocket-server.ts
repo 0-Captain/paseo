@@ -383,6 +383,7 @@ export class VoiceAssistantWebSocketServer {
   private runtimeMetricsInterval: ReturnType<typeof setInterval> | null = null;
   private unsubscribeSpeechReadiness: (() => void) | null = null;
   private unsubscribeDaemonConfigChange: (() => void) | null = null;
+  private unsubscribeClaudeQuotaUpdate: (() => void) | null = null;
 
   constructor(
     server: HTTPServer,
@@ -498,7 +499,7 @@ export class VoiceAssistantWebSocketServer {
       this.broadcastDaemonConfigChanged(config);
     });
 
-    this.claudeQuotaService.onUpdate((payload) => {
+    this.unsubscribeClaudeQuotaUpdate = this.claudeQuotaService.onUpdate((payload) => {
       this.broadcast(
         wrapSessionMessage({
           type: "usage.claude.quota_updated",
@@ -690,6 +691,8 @@ export class VoiceAssistantWebSocketServer {
     this.unsubscribeSpeechReadiness = null;
     this.unsubscribeDaemonConfigChange?.();
     this.unsubscribeDaemonConfigChange = null;
+    this.unsubscribeClaudeQuotaUpdate?.();
+    this.unsubscribeClaudeQuotaUpdate = null;
     if (this.runtimeMetricsInterval) {
       clearInterval(this.runtimeMetricsInterval);
       this.runtimeMetricsInterval = null;

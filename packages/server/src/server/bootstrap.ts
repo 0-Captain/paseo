@@ -574,7 +574,7 @@ export async function createPaseoDaemon(
     logger,
   });
 
-  agentManager.subscribe(
+  const unsubscribeClaudeQuota = agentManager.subscribe(
     (event) => {
       if (
         event.type === "agent_stream" &&
@@ -1129,6 +1129,7 @@ export async function createPaseoDaemon(
   const stop = async () => {
     scriptHealthMonitor.stop();
     claudeQuotaService.stop();
+    unsubscribeClaudeQuota();
     await closeAllAgents(logger, agentManager);
     await agentManager.flush().catch(() => undefined);
     detachAgentStoragePersistence();
