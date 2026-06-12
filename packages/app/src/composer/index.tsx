@@ -41,6 +41,8 @@ import {
   type DraftAgentControlsProps,
 } from "@/composer/agent-controls";
 import { ContextWindowMeter } from "@/components/context-window-meter";
+import { ClaudeQuotaMeter } from "@/components/claude-quota-meter";
+import { useClaudeQuota } from "@/hooks/use-claude-quota";
 import { useImageAttachmentPicker } from "@/hooks/use-image-attachment-picker";
 import { useSessionStore } from "@/stores/session-store";
 import { useFilePicker } from "@/hooks/use-file-picker";
@@ -194,6 +196,7 @@ function buildAgentStateSelector(serverId: string, agentId: string) {
     const agent = state.sessions[serverId]?.agents?.get(agentId) ?? null;
     return {
       status: agent?.status ?? null,
+      provider: agent?.provider ?? null,
       contextWindowMaxTokens: agent?.lastUsage?.contextWindowMaxTokens ?? null,
       contextWindowUsedTokens: agent?.lastUsage?.contextWindowUsedTokens ?? null,
       totalCostUsd: agent?.lastUsage?.totalCostUsd ?? null,
@@ -222,13 +225,23 @@ function renderContextWindowMeter(
 
 function resolveContextWindowPlacement(
   meter: ReactElement | null,
+  quotaMeter: ReactElement | null,
   isMobile: boolean,
 ): { beforeVoiceContent: ReactNode; footerInlineContent: ReactNode } {
+  const combined =
+    meter || quotaMeter ? (
+      <>
+        {meter}
+        {quotaMeter}
+      </>
+    ) : null;
   if (isMobile) {
-    return { beforeVoiceContent: null, footerInlineContent: meter };
+    return { beforeVoiceContent: null, footerInlineContent: combined };
   }
   return {
-    beforeVoiceContent: <View style={styles.contextWindowMeterSlot}>{meter}</View>,
+    beforeVoiceContent: combined ? (
+      <View style={styles.contextWindowMeterSlot}>{combined}</View>
+    ) : null,
     footerInlineContent: null,
   };
 }
@@ -1661,9 +1674,17 @@ export function Composer({
       ),
     [contextWindowMaxTokens, contextWindowUsedTokens, agentState.totalCostUsd, isCompactLayout],
   );
+  const claudeQuotaState = useClaudeQuota(serverId);
+  const claudeQuotaMeter = useMemo(
+    () =>
+      agentState.provider === "claude" && claudeQuotaState ? (
+        <ClaudeQuotaMeter quota={claudeQuotaState.quota} fetchedAt={claudeQuotaState.fetchedAt} />
+      ) : null,
+    [agentState.provider, claudeQuotaState],
+  );
   const { beforeVoiceContent, footerInlineContent } = useMemo(
-    () => resolveContextWindowPlacement(contextWindowMeter, isCompactLayout),
-    [contextWindowMeter, isCompactLayout],
+    () => resolveContextWindowPlacement(contextWindowMeter, claudeQuotaMeter, isCompactLayout),
+    [contextWindowMeter, claudeQuotaMeter, isCompactLayout],
   );
 
   const githubSearchQueryTrimmed = githubSearchQuery.trim();
@@ -2032,10 +2053,9 @@ const styles = StyleSheet.create((theme: Theme) => ({
     gap: theme.spacing[1],
   },
   contextWindowMeterSlot: {
-    width: 28,
-    height: 28,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: theme.spacing[1],
   },
   realtimeVoiceButton: {
     width: 28,
