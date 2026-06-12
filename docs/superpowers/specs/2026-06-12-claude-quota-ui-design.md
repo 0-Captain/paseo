@@ -56,7 +56,7 @@ per the repo's feature-contract rules.
 New file: `packages/server/src/services/claude-quota-service.ts`.
 
 - **Credential reading:** macOS — `security find-generic-password -s
-  "Claude Code-credentials" -w`; fallback (all platforms) —
+"Claude Code-credentials" -w`; fallback (all platforms) —
   `~/.claude/.credentials.json`. Extract `claudeAiOauth.accessToken`. The
   token never appears in logs or protocol messages.
 - **Fetch:** `GET <baseUrl>/api/oauth/usage` with the two headers above,

@@ -199,7 +199,9 @@ export const UsageClaudeQuotaUpdatedMessageSchema = z.object({
 });
 
 export type ClaudeQuota = z.infer<typeof ClaudeQuotaSchema>;
-export type ClaudeQuotaStatePayload = z.infer<typeof UsageClaudeQuotaUpdatedMessageSchema>["payload"];
+export type ClaudeQuotaStatePayload = z.infer<
+  typeof UsageClaudeQuotaUpdatedMessageSchema
+>["payload"];
 ```
 
 - [ ] **Step 1.4: Register in the unions and the features object**
@@ -279,7 +281,11 @@ function startStub(params: {
     server.listen(0, "127.0.0.1", () => {
       const address = server.address();
       if (typeof address === "object" && address) {
-        resolveStart({ server, baseUrl: `http://127.0.0.1:${address.port}`, requests: () => count });
+        resolveStart({
+          server,
+          baseUrl: `http://127.0.0.1:${address.port}`,
+          requests: () => count,
+        });
       }
     });
   });
@@ -428,7 +434,10 @@ describe("ClaudeQuotaService", () => {
     await service.refresh();
     await service.refresh(); // identical body → no second update
     expect(updates).toHaveLength(1);
-    body = { ...USAGE_BODY, five_hour: { utilization: 80.0, resets_at: "2026-06-12T08:00:00+00:00" } };
+    body = {
+      ...USAGE_BODY,
+      five_hour: { utilization: 80.0, resets_at: "2026-06-12T08:00:00+00:00" },
+    };
     await service.refresh();
     expect(updates).toHaveLength(2);
   });
@@ -470,7 +479,10 @@ interface ClaudeQuotaServiceOptions {
   readKeychainToken?: () => Promise<string | null>;
   minFetchIntervalMs?: number;
   pollIntervalMs?: number;
-  logger?: { warn: (obj: unknown, msg: string) => void; debug: (obj: unknown, msg: string) => void };
+  logger?: {
+    warn: (obj: unknown, msg: string) => void;
+    debug: (obj: unknown, msg: string) => void;
+  };
 }
 
 async function readKeychainTokenDefault(): Promise<string | null> {
@@ -990,17 +1002,52 @@ const DESTRUCTIVE = "#c64f43";
 
 describe("resolveRingColor", () => {
   test("outer ring is Claude orange under 90%", () => {
-    expect(resolveRingColor({ utilization: 89.9, ring: "outer", colorScheme: "dark", destructive: DESTRUCTIVE })).toBe(CLAUDE_ORANGE);
+    expect(
+      resolveRingColor({
+        utilization: 89.9,
+        ring: "outer",
+        colorScheme: "dark",
+        destructive: DESTRUCTIVE,
+      }),
+    ).toBe(CLAUDE_ORANGE);
   });
   test("inner ring uses dark variant on dark scheme", () => {
-    expect(resolveRingColor({ utilization: 10, ring: "inner", colorScheme: "dark", destructive: DESTRUCTIVE })).toBe(CLAUDE_ORANGE_INNER_DARK);
+    expect(
+      resolveRingColor({
+        utilization: 10,
+        ring: "inner",
+        colorScheme: "dark",
+        destructive: DESTRUCTIVE,
+      }),
+    ).toBe(CLAUDE_ORANGE_INNER_DARK);
   });
   test("inner ring uses light variant on light scheme", () => {
-    expect(resolveRingColor({ utilization: 10, ring: "inner", colorScheme: "light", destructive: DESTRUCTIVE })).toBe(CLAUDE_ORANGE_INNER_LIGHT);
+    expect(
+      resolveRingColor({
+        utilization: 10,
+        ring: "inner",
+        colorScheme: "light",
+        destructive: DESTRUCTIVE,
+      }),
+    ).toBe(CLAUDE_ORANGE_INNER_LIGHT);
   });
   test("either ring turns destructive at >=90%", () => {
-    expect(resolveRingColor({ utilization: 90, ring: "outer", colorScheme: "dark", destructive: DESTRUCTIVE })).toBe(DESTRUCTIVE);
-    expect(resolveRingColor({ utilization: 95, ring: "inner", colorScheme: "light", destructive: DESTRUCTIVE })).toBe(DESTRUCTIVE);
+    expect(
+      resolveRingColor({
+        utilization: 90,
+        ring: "outer",
+        colorScheme: "dark",
+        destructive: DESTRUCTIVE,
+      }),
+    ).toBe(DESTRUCTIVE);
+    expect(
+      resolveRingColor({
+        utilization: 95,
+        ring: "inner",
+        colorScheme: "light",
+        destructive: DESTRUCTIVE,
+      }),
+    ).toBe(DESTRUCTIVE);
   });
 });
 
@@ -1191,7 +1238,14 @@ export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
-            <Circle cx={CENTER} cy={CENTER} r={OUTER_RADIUS} fill="none" stroke={track} strokeWidth={STROKE_WIDTH} />
+            <Circle
+              cx={CENTER}
+              cy={CENTER}
+              r={OUTER_RADIUS}
+              fill="none"
+              stroke={track}
+              strokeWidth={STROKE_WIDTH}
+            />
             <Circle
               cx={CENTER}
               cy={CENTER}
@@ -1203,7 +1257,14 @@ export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
               strokeDasharray={OUTER_CIRCUMFERENCE}
               strokeDashoffset={outerOffset}
             />
-            <Circle cx={CENTER} cy={CENTER} r={INNER_RADIUS} fill="none" stroke={track} strokeWidth={STROKE_WIDTH} />
+            <Circle
+              cx={CENTER}
+              cy={CENTER}
+              r={INNER_RADIUS}
+              fill="none"
+              stroke={track}
+              strokeWidth={STROKE_WIDTH}
+            />
             <Circle
               cx={CENTER}
               cy={CENTER}
