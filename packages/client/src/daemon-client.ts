@@ -39,6 +39,7 @@ import type {
   CheckoutGithubSetAutoMergeResponse,
   CheckoutGithubGetCheckDetailsResponse,
   CheckoutPrStatusResponse,
+  UsageClaudeGetQuotaResponse,
   PullRequestTimelineResponse,
   CheckoutSwitchBranchResponse,
   StashSaveResponse,
@@ -294,6 +295,7 @@ type CheckoutPrCreatePayload = CheckoutPrCreateResponse["payload"];
 type CheckoutPrMergePayload = CheckoutPrMergeResponse["payload"];
 type CheckoutGithubSetAutoMergePayload = CheckoutGithubSetAutoMergeResponse["payload"];
 type CheckoutGithubGetCheckDetailsPayload = CheckoutGithubGetCheckDetailsResponse["payload"];
+export type ClaudeQuotaRpcPayload = UsageClaudeGetQuotaResponse["payload"];
 type CheckoutPrStatusPayload = CheckoutPrStatusResponse["payload"];
 type PullRequestTimelinePayload = PullRequestTimelineResponse["payload"];
 type CheckoutSwitchBranchPayload = CheckoutSwitchBranchResponse["payload"];
@@ -3049,6 +3051,14 @@ export class DaemonClient {
         timeout: 60000,
       },
     );
+  }
+
+  async getClaudeQuota(requestId?: string): Promise<ClaudeQuotaRpcPayload> {
+    return this.sendNamespacedCorrelatedSessionRequest<"usage.claude.get_quota.response">({
+      requestId,
+      message: { type: "usage.claude.get_quota.request" },
+      timeout: 15000,
+    });
   }
 
   async checkoutPrStatus(cwd: string, requestId?: string): Promise<CheckoutPrStatusPayload> {
