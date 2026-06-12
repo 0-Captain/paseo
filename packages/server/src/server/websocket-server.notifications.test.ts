@@ -135,6 +135,7 @@ function createServer(agentManagerOverrides?: Record<string, unknown>) {
     undefined,
     undefined,
     undefined,
+    undefined,
     pushNotifications,
     createProviderSnapshotManagerStub().manager,
   );

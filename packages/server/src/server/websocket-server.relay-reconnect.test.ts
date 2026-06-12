@@ -262,6 +262,7 @@ function createServer(options?: { speechReadiness?: SpeechReadinessSnapshot | nu
     undefined,
     undefined,
     undefined,
+    undefined,
     createProviderSnapshotManagerStub().manager,
   );
 }

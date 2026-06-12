@@ -88,6 +88,7 @@ function formatListenTarget(listenTarget: ListenTarget | null): string | null {
 
 import { VoiceAssistantWebSocketServer } from "./websocket-server.js";
 import { createGitHubService } from "../services/github-service.js";
+import { ClaudeQuotaService } from "../services/claude-quota-service.js";
 import { createPaseoWorktree as createRegisteredPaseoWorktree } from "./paseo-worktree-service.js";
 import { createPaseoWorktreeWorkflow } from "./worktree-session.js";
 import { DownloadTokenStore } from "./file-download/token-store.js";
@@ -542,6 +543,7 @@ export async function createPaseoDaemon(
   });
   const terminalManager = createConfiguredTerminalManager();
   const github = createGitHubService();
+  const claudeQuotaService = new ClaudeQuotaService({ logger });
   const workspaceGitService = new WorkspaceGitServiceImpl({
     logger,
     paseoHome: config.paseoHome,
@@ -571,6 +573,19 @@ export async function createPaseoDaemon(
     mcpAuthToken: agentMcpAuthToken,
     logger,
   });
+
+  agentManager.subscribe(
+    (event) => {
+      if (
+        event.type === "agent_stream" &&
+        event.event.type === "turn_completed" &&
+        event.event.provider === "claude"
+      ) {
+        claudeQuotaService.notifyClaudeTurnCompleted();
+      }
+    },
+    { replayState: false },
+  );
 
   const detachAgentStoragePersistence = attachAgentStoragePersistence(
     logger,
@@ -1031,6 +1046,7 @@ export async function createPaseoDaemon(
               (hostname) => scriptHealthMonitor.getHealthForHostname(hostname),
               workspaceGitService,
               github,
+              claudeQuotaService,
               config.pushNotificationSender,
               providerSnapshotManager,
               {
@@ -1046,6 +1062,11 @@ export async function createPaseoDaemon(
               },
               serviceProxyPublicBaseUrl,
             );
+
+            const capturedWsServer = wsServer;
+            claudeQuotaService.start({
+              hasConnectedClients: () => capturedWsServer.hasConnectedClients(),
+            });
 
             if (relayEnabled) {
               const offer = await createConnectionOfferV2({
@@ -1107,6 +1128,7 @@ export async function createPaseoDaemon(
 
   const stop = async () => {
     scriptHealthMonitor.stop();
+    claudeQuotaService.stop();
     await closeAllAgents(logger, agentManager);
     await agentManager.flush().catch(() => undefined);
     detachAgentStoragePersistence();

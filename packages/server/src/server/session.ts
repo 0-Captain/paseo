@@ -232,6 +232,7 @@ import {
   type GitHubService,
   type PullRequestTimelineItem,
 } from "../services/github-service.js";
+import { ClaudeQuotaService } from "../services/claude-quota-service.js";
 import {
   summarizeFetchWorkspacesEntries,
   WorkspaceDirectory,
@@ -582,6 +583,7 @@ export interface SessionOptions {
   loopService: LoopService;
   checkoutDiffManager: CheckoutDiffManager;
   github?: GitHubService;
+  claudeQuotaService?: ClaudeQuotaService;
   createAgentMcpTransport?: AgentMcpTransportFactory;
   workspaceGitService: WorkspaceGitService;
   daemonConfigStore: DaemonConfigStore;
@@ -802,6 +804,7 @@ export class Session {
   private readonly loopService: LoopService;
   private readonly checkoutDiffManager: CheckoutDiffManager;
   private readonly github: GitHubService;
+  private readonly claudeQuotaService: ClaudeQuotaService;
   private readonly workspaceGitService: WorkspaceGitService;
   private readonly daemonConfigStore: DaemonConfigStore;
   private readonly mcpBaseUrl: string | null;
@@ -877,6 +880,7 @@ export class Session {
       loopService,
       checkoutDiffManager,
       github,
+      claudeQuotaService,
       workspaceGitService,
       daemonConfigStore,
       mcpBaseUrl,
@@ -927,6 +931,7 @@ export class Session {
     this.loopService = loopService;
     this.checkoutDiffManager = checkoutDiffManager;
     this.github = github ?? createGitHubService();
+    this.claudeQuotaService = claudeQuotaService ?? new ClaudeQuotaService();
     this.workspaceGitService = workspaceGitService;
     this.daemonConfigStore = daemonConfigStore;
     this.mcpBaseUrl = mcpBaseUrl ?? null;
@@ -2108,6 +2113,8 @@ export class Session {
         return this.handleCheckoutGithubSetAutoMergeRequest(msg);
       case "checkout.github.get_check_details.request":
         return this.handleCheckoutGithubGetCheckDetailsRequest(msg);
+      case "usage.claude.get_quota.request":
+        return this.handleUsageClaudeGetQuotaRequest(msg);
       case "checkout_pr_status_request":
         return this.handleCheckoutPrStatusRequest(msg);
       case "pull_request_timeline_request":
@@ -5597,6 +5604,23 @@ export class Session {
         },
       });
     }
+  }
+
+  private async handleUsageClaudeGetQuotaRequest(
+    msg: Extract<SessionInboundMessage, { type: "usage.claude.get_quota.request" }>,
+  ): Promise<void> {
+    const snapshot = await this.claudeQuotaService.requestQuota();
+    this.emit({
+      type: "usage.claude.get_quota.response",
+      payload: snapshot
+        ? {
+            requestId: msg.requestId,
+            available: true,
+            quota: snapshot.quota,
+            fetchedAt: snapshot.fetchedAt,
+          }
+        : { requestId: msg.requestId, available: false },
+    });
   }
 
   private async resolveCurrentPullRequest(

@@ -45,6 +45,7 @@ import {
   findLatestPermissionRequest,
 } from "@getpaseo/protocol/agent-attention-notification";
 import { createGitHubService, type GitHubService } from "../services/github-service.js";
+import { ClaudeQuotaService } from "../services/claude-quota-service.js";
 import {
   extractWsBearerProtocol,
   extractWsBearerToken,
@@ -349,6 +350,7 @@ export class VoiceAssistantWebSocketServer {
   private readonly scheduleService: ScheduleService;
   private readonly checkoutDiffManager: CheckoutDiffManager;
   private readonly github: GitHubService;
+  private readonly claudeQuotaService: ClaudeQuotaService;
   private readonly workspaceGitService: WorkspaceGitService;
   private readonly downloadTokenStore: DownloadTokenStore;
   private readonly paseoHome: string;
@@ -419,6 +421,7 @@ export class VoiceAssistantWebSocketServer {
     resolveScriptHealth?: (hostname: string) => ScriptHealthState | null,
     workspaceGitService?: WorkspaceGitService,
     github?: GitHubService,
+    claudeQuotaService?: ClaudeQuotaService,
     pushNotificationSender?: PushNotificationSender,
     providerSnapshotManager?: ProviderSnapshotManager,
     daemonRuntimeConfig?: {
@@ -456,6 +459,7 @@ export class VoiceAssistantWebSocketServer {
     this.scheduleService = requiredServices.scheduleService;
     this.checkoutDiffManager = requiredServices.checkoutDiffManager;
     this.github = github ?? createGitHubService();
+    this.claudeQuotaService = claudeQuotaService ?? new ClaudeQuotaService();
     this.workspaceGitService = workspaceGitService ?? createFallbackWorkspaceGitService();
     this.downloadTokenStore = downloadTokenStore;
     this.paseoHome = paseoHome;
@@ -492,6 +496,15 @@ export class VoiceAssistantWebSocketServer {
       );
       this.agentManager.updateProviderRegistry(nextAgentManagerState);
       this.broadcastDaemonConfigChanged(config);
+    });
+
+    this.claudeQuotaService.onUpdate((payload) => {
+      this.broadcast(
+        wrapSessionMessage({
+          type: "usage.claude.quota_updated",
+          payload,
+        }),
+      );
     });
 
     const pushLogger = this.logger.child({ module: "push" });
@@ -633,6 +646,10 @@ export class VoiceAssistantWebSocketServer {
         this.runtimeMetrics.recordOutboundMessage(message, ws.bufferedAmount);
       }
     }
+  }
+
+  public hasConnectedClients(): boolean {
+    return this.sessions.size > 0;
   }
 
   public listActiveSessions(): Session[] {
@@ -878,6 +895,7 @@ export class VoiceAssistantWebSocketServer {
       scheduleService: this.scheduleService,
       checkoutDiffManager: this.checkoutDiffManager,
       github: this.github,
+      claudeQuotaService: this.claudeQuotaService,
       workspaceGitService: this.workspaceGitService,
       daemonConfigStore: this.daemonConfigStore,
       mcpBaseUrl: this.mcpBaseUrl,
@@ -1064,6 +1082,8 @@ export class VoiceAssistantWebSocketServer {
         rewind: true,
         // COMPAT(checkoutRefresh): added in v0.1.86, remove gate after 2026-11-29.
         checkoutRefresh: true,
+        // COMPAT(claudeQuota): added in v0.1.92, remove gate after 2026-12-13.
+        claudeQuota: true,
       },
     };
   }
