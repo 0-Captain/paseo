@@ -84,19 +84,19 @@ describe("formatResetLabel", () => {
 describe("formatUpdatedAgo", () => {
   const nowMs = Date.parse("2026-06-12T03:00:00Z");
   test("under a minute", () => {
-    expect(formatUpdatedAgo(nowMs - 20_000, nowMs)).toBe("Updated just now");
+    expect(formatUpdatedAgo(nowMs - 20_000, nowMs)).toEqual({ kind: "justNow" });
   });
   test("minutes", () => {
-    expect(formatUpdatedAgo(nowMs - 2 * 60_000, nowMs)).toBe("Updated 2m ago");
+    expect(formatUpdatedAgo(nowMs - 2 * 60_000, nowMs)).toEqual({ kind: "minutes", value: 2 });
   });
   test("hours", () => {
-    expect(formatUpdatedAgo(nowMs - 3 * 3_600_000, nowMs)).toBe("Updated 3h ago");
+    expect(formatUpdatedAgo(nowMs - 3 * 3_600_000, nowMs)).toEqual({ kind: "hours", value: 3 });
   });
   test("exact 1-minute boundary switches to minutes", () => {
-    expect(formatUpdatedAgo(nowMs - 60_000, nowMs)).toBe("Updated 1m ago");
+    expect(formatUpdatedAgo(nowMs - 60_000, nowMs)).toEqual({ kind: "minutes", value: 1 });
   });
   test("exact 1-hour boundary switches to hours", () => {
-    expect(formatUpdatedAgo(nowMs - 3_600_000, nowMs)).toBe("Updated 1h ago");
+    expect(formatUpdatedAgo(nowMs - 3_600_000, nowMs)).toEqual({ kind: "hours", value: 1 });
   });
   test("null fetchedAt returns null", () => {
     expect(formatUpdatedAgo(null, nowMs)).toBeNull();

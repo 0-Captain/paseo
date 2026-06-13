@@ -1356,6 +1356,22 @@ export const fr: TranslationResources = {
     sessionCost: "Coût de la séance{{cost}}",
     accessibility: "Fenêtre contextuelle{{percentage}}% utilisé",
   },
+  claudeQuota: {
+    title: "Utilisation de Claude",
+    accessibility: "Utilisation de Claude : {{summary}}",
+    accessibilityRow: "{{label}} {{percentage}}% utilisé",
+    labels: {
+      fiveHour: "Session de 5 h",
+      weekAll: "Semaine (tous les modèles)",
+      weekSonnet: "Semaine (Sonnet)",
+      weekOpus: "Semaine (Opus)",
+    },
+    rowWithReset: "{{label}} — {{percentage}}% · réinitialisation {{reset}}",
+    rowWithoutReset: "{{label}} — {{percentage}}%",
+    updatedJustNow: "Mis à jour à l'instant",
+    updatedMinutes: "Mis à jour il y a {{minutes}} min",
+    updatedHours: "Mis à jour il y a {{hours}} h",
+  },
   review: {
     comment: {
       add: "Ajouter un commentaire",

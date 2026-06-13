@@ -1318,6 +1318,22 @@ export const ar: TranslationResources = {
     sessionCost: "تكلفة الجلسة{{cost}}",
     accessibility: "تم استخدام نافذة السياق{{percentage}}%",
   },
+  claudeQuota: {
+    title: "استخدام Claude",
+    accessibility: "استخدام Claude: {{summary}}",
+    accessibilityRow: "{{label}} {{percentage}}% مستخدم",
+    labels: {
+      fiveHour: "جلسة 5 ساعات",
+      weekAll: "الأسبوع (كل النماذج)",
+      weekSonnet: "الأسبوع (Sonnet)",
+      weekOpus: "الأسبوع (Opus)",
+    },
+    rowWithReset: "{{label}} — {{percentage}}% · يُعاد الضبط {{reset}}",
+    rowWithoutReset: "{{label}} — {{percentage}}%",
+    updatedJustNow: "تم التحديث الآن",
+    updatedMinutes: "تم التحديث قبل {{minutes}} دقيقة",
+    updatedHours: "تم التحديث قبل {{hours}} ساعة",
+  },
   review: {
     comment: {
       add: "إضافة تعليق المراجعة",

@@ -1,9 +1,15 @@
 import { Pressable, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { useTranslation } from "react-i18next";
 import type { ClaudeQuota } from "@getpaseo/protocol/messages";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatResetLabel, formatUpdatedAgo, resolveRingColor } from "./claude-quota-meter-core";
+import {
+  formatResetLabel,
+  formatUpdatedAgo,
+  resolveRingColor,
+  type UpdatedAgo,
+} from "./claude-quota-meter-core";
 
 export {
   CLAUDE_ORANGE,
@@ -31,8 +37,25 @@ interface ClaudeQuotaMeterProps {
   fetchedAt: number | null;
 }
 
+function resolveUpdatedText(
+  updated: UpdatedAgo | null,
+  t: ReturnType<typeof useTranslation>["t"],
+): string | null {
+  if (!updated) {
+    return null;
+  }
+  if (updated.kind === "justNow") {
+    return t("claudeQuota.updatedJustNow");
+  }
+  if (updated.kind === "minutes") {
+    return t("claudeQuota.updatedMinutes", { minutes: updated.value });
+  }
+  return t("claudeQuota.updatedHours", { hours: updated.value });
+}
+
 export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
   const { theme } = useUnistyles();
+  const { t } = useTranslation();
   const fiveHour = quota.fiveHour ?? null;
   const sevenDay = quota.sevenDay ?? null;
   if (!fiveHour && !sevenDay) {
@@ -63,24 +86,41 @@ export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
   const innerOffset = sevenDay
     ? INNER_CIRCUMFERENCE * (1 - clampFraction(sevenDay.utilization))
     : INNER_CIRCUMFERENCE;
-  const updatedLabel = formatUpdatedAgo(fetchedAt, now.getTime());
+  const updatedText = resolveUpdatedText(formatUpdatedAgo(fetchedAt, now.getTime()), t);
 
-  const rows: Array<{ label: string; bucket: { utilization: number; resetsAt?: string } }> = [];
+  const rows: Array<{
+    id: string;
+    label: string;
+    bucket: { utilization: number; resetsAt?: string };
+  }> = [];
   if (fiveHour) {
-    rows.push({ label: "5h session", bucket: fiveHour });
+    rows.push({ id: "fiveHour", label: t("claudeQuota.labels.fiveHour"), bucket: fiveHour });
   }
   if (sevenDay) {
-    rows.push({ label: "Week (all models)", bucket: sevenDay });
+    rows.push({ id: "weekAll", label: t("claudeQuota.labels.weekAll"), bucket: sevenDay });
   }
   if (quota.sevenDaySonnet) {
-    rows.push({ label: "Week (Sonnet)", bucket: quota.sevenDaySonnet });
+    rows.push({
+      id: "weekSonnet",
+      label: t("claudeQuota.labels.weekSonnet"),
+      bucket: quota.sevenDaySonnet,
+    });
   }
   if (quota.sevenDayOpus) {
-    rows.push({ label: "Week (Opus)", bucket: quota.sevenDayOpus });
+    rows.push({
+      id: "weekOpus",
+      label: t("claudeQuota.labels.weekOpus"),
+      bucket: quota.sevenDayOpus,
+    });
   }
 
   const accessibilitySummary = rows
-    .map((row) => `${row.label} ${Math.round(row.bucket.utilization)}% used`)
+    .map((row) =>
+      t("claudeQuota.accessibilityRow", {
+        label: row.label,
+        percentage: Math.round(row.bucket.utilization),
+      }),
+    )
     .join(", ");
 
   return (
@@ -89,7 +129,7 @@ export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
         <Pressable
           style={styles.container}
           accessibilityRole="image"
-          accessibilityLabel={`Claude usage: ${accessibilitySummary}`}
+          accessibilityLabel={t("claudeQuota.accessibility", { summary: accessibilitySummary })}
         >
           <Svg
             width={SVG_SIZE}
@@ -142,17 +182,20 @@ export function ClaudeQuotaMeter({ quota, fetchedAt }: ClaudeQuotaMeterProps) {
       </TooltipTrigger>
       <TooltipContent side="top" align="center" offset={8}>
         <View style={styles.tooltipContent}>
-          <Text style={styles.tooltipTitle}>Claude usage</Text>
+          <Text style={styles.tooltipTitle}>{t("claudeQuota.title")}</Text>
           {rows.map((row) => {
             const reset = formatResetLabel(row.bucket.resetsAt, now);
-            const detail = `${Math.round(row.bucket.utilization)}%${reset ? ` · resets ${reset}` : ""}`;
+            const percentage = Math.round(row.bucket.utilization);
+            const text = reset
+              ? t("claudeQuota.rowWithReset", { label: row.label, percentage, reset })
+              : t("claudeQuota.rowWithoutReset", { label: row.label, percentage });
             return (
-              <Text key={row.label} style={styles.tooltipText}>
-                {`${row.label} — ${detail}`}
+              <Text key={row.id} style={styles.tooltipText}>
+                {text}
               </Text>
             );
           })}
-          {updatedLabel ? <Text style={styles.tooltipDetail}>{updatedLabel}</Text> : null}
+          {updatedText ? <Text style={styles.tooltipDetail}>{updatedText}</Text> : null}
         </View>
       </TooltipContent>
     </Tooltip>

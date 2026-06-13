@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ClaudeQuota } from "@getpaseo/protocol/messages";
 import { useHostRuntimeClient, useHostRuntimeIsConnected } from "@/runtime/host-runtime";
@@ -20,6 +21,7 @@ function claudeQuotaQueryKey(serverId: string | null) {
 }
 
 export function useClaudeQuota(serverId: string | null): ClaudeQuotaState | null {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const client = useHostRuntimeClient(serverId ?? "");
   const isConnected = useHostRuntimeIsConnected(serverId ?? "");
@@ -34,7 +36,7 @@ export function useClaudeQuota(serverId: string | null): ClaudeQuotaState | null
     staleTime: Infinity,
     queryFn: async () => {
       if (!client) {
-        throw new Error("Host is not connected");
+        throw new Error(t("workspace.terminal.hostDisconnected"));
       }
       return await client.getClaudeQuota();
     },

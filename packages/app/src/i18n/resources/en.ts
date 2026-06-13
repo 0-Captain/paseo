@@ -1324,6 +1324,22 @@ export const en = {
     sessionCost: "Session cost {{cost}}",
     accessibility: "Context window {{percentage}}% used",
   },
+  claudeQuota: {
+    title: "Claude usage",
+    accessibility: "Claude usage: {{summary}}",
+    accessibilityRow: "{{label}} {{percentage}}% used",
+    labels: {
+      fiveHour: "5h session",
+      weekAll: "Week (all models)",
+      weekSonnet: "Week (Sonnet)",
+      weekOpus: "Week (Opus)",
+    },
+    rowWithReset: "{{label}} — {{percentage}}% · resets {{reset}}",
+    rowWithoutReset: "{{label}} — {{percentage}}%",
+    updatedJustNow: "Updated just now",
+    updatedMinutes: "Updated {{minutes}}m ago",
+    updatedHours: "Updated {{hours}}h ago",
+  },
   review: {
     comment: {
       add: "Add review comment",

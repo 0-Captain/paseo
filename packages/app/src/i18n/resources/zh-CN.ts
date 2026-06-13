@@ -1301,6 +1301,22 @@ export const zhCN: TranslationResources = {
     sessionCost: "会话费用 {{cost}}",
     accessibility: "上下文窗口已使用 {{percentage}}%",
   },
+  claudeQuota: {
+    title: "Claude 用量",
+    accessibility: "Claude 用量：{{summary}}",
+    accessibilityRow: "{{label}} 已用 {{percentage}}%",
+    labels: {
+      fiveHour: "5 小时会话",
+      weekAll: "本周（所有模型）",
+      weekSonnet: "本周（Sonnet）",
+      weekOpus: "本周（Opus）",
+    },
+    rowWithReset: "{{label}} — {{percentage}}% · {{reset}} 重置",
+    rowWithoutReset: "{{label}} — {{percentage}}%",
+    updatedJustNow: "刚刚更新",
+    updatedMinutes: "{{minutes}} 分钟前更新",
+    updatedHours: "{{hours}} 小时前更新",
+  },
   review: {
     comment: {
       add: "添加 review 评论",

@@ -36,16 +36,23 @@ export function formatResetLabel(resetsAt: string | undefined, now: Date): strin
   return `${weekday} ${time}`;
 }
 
-export function formatUpdatedAgo(fetchedAt: number | null, nowMs: number): string | null {
+// Structured "time since last fetch" so the component renders it through i18n
+// (the actual wording lives in the translation resources, not here).
+export type UpdatedAgo =
+  | { kind: "justNow" }
+  | { kind: "minutes"; value: number }
+  | { kind: "hours"; value: number };
+
+export function formatUpdatedAgo(fetchedAt: number | null, nowMs: number): UpdatedAgo | null {
   if (fetchedAt === null || !Number.isFinite(fetchedAt)) {
     return null;
   }
   const elapsedMs = Math.max(0, nowMs - fetchedAt);
   if (elapsedMs < 60_000) {
-    return "Updated just now";
+    return { kind: "justNow" };
   }
   if (elapsedMs < 3_600_000) {
-    return `Updated ${Math.floor(elapsedMs / 60_000)}m ago`;
+    return { kind: "minutes", value: Math.floor(elapsedMs / 60_000) };
   }
-  return `Updated ${Math.floor(elapsedMs / 3_600_000)}h ago`;
+  return { kind: "hours", value: Math.floor(elapsedMs / 3_600_000) };
 }

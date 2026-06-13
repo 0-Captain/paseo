@@ -1345,6 +1345,22 @@ export const ru: TranslationResources = {
     sessionCost: "Стоимость сеанса{{cost}}",
     accessibility: "Контекстное окно{{percentage}}% использовано",
   },
+  claudeQuota: {
+    title: "Использование Claude",
+    accessibility: "Использование Claude: {{summary}}",
+    accessibilityRow: "{{label}} использовано {{percentage}}%",
+    labels: {
+      fiveHour: "5-часовая сессия",
+      weekAll: "Неделя (все модели)",
+      weekSonnet: "Неделя (Sonnet)",
+      weekOpus: "Неделя (Opus)",
+    },
+    rowWithReset: "{{label}} — {{percentage}}% · сброс {{reset}}",
+    rowWithoutReset: "{{label}} — {{percentage}}%",
+    updatedJustNow: "Обновлено только что",
+    updatedMinutes: "Обновлено {{minutes}} мин назад",
+    updatedHours: "Обновлено {{hours}} ч назад",
+  },
   review: {
     comment: {
       add: "Добавить комментарий к обзору",
